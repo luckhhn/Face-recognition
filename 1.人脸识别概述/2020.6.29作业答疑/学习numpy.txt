@@ -1,0 +1,2 @@
+pythonic能推荐一些学习资料么？
+---> https://www.numpy.org.cn/
