@@ -3,6 +3,7 @@ import numpy as np
 from align_faces import warp_and_crop_face, get_reference_facial_points
 from mtcnn.detector import MtcnnDetector
 
+
 def draw_all(filename, bbox, facial5points):
     image = cv2.imread(filename)
     for i in range(bbox.shape[0]):
@@ -55,95 +56,137 @@ def draw_name(filename, bbox, labels, thickness=2):
     cv2.imwrite("{}_name.jpg".format(dst_name), draw)
 
 
-def process(filename, type, output_size):
+def process(filename, type, savafilename, output_size):
     img = cv2.imread(filename)
     bbox, facial5points = detector.detect_faces(img)
+    if bbox.size:
+        # # visualization
+        # draw_bbox(filename, bbox)
+        # draw_lms(filename, facial5points)
+        # draw_all(filename, bbox, facial5points)
 
-    # # visualization
-    draw_bbox(filename, bbox)
-    draw_lms(filename, facial5points)
-    draw_all(filename, bbox, facial5points)
+        # # show ref_5pts
+        if output_size[0] == 112 and output_size[1] == 112:
+            tmp_pts = np.array([[38.29459953,
+                                 73.53179932,
+                                 56.02519989,
+                                 41.54930115,
+                                 70.72990036,
+                                 51.69630051,
+                                 51.50139999,
+                                 71.73660278,
+                                 92.3655014,
+                                 92.20410156]])
+            empty_face = np.zeros((output_size[1], output_size[0], 3))  # output_size[0] == 列
+            cv2.imwrite('empty_face.jpg', empty_face)
+            draw_lms('empty_face.jpg', tmp_pts)
+        elif output_size[0] == 96 and output_size[1] == 112:
+            tmp_pts = np.array([[30.29459953,
+                                 65.53179932,
+                                 48.02519989,
+                                 33.54930115,
+                                 62.72990036,
+                                 51.69630051,
+                                 51.50139999,
+                                 71.73660278,
+                                 92.3655014,
+                                 92.20410156]])
+            empty_face = np.zeros((output_size[1], output_size[0], 3))
+            cv2.imwrite('empty_face_' + str(output_size[0])
+                        + '_' + str(output_size[1]) + '.jpg', empty_face)
+            draw_lms('empty_face_' + str(output_size[0])
+                     + '_' + str(output_size[1]) + '.jpg', tmp_pts)
+        elif output_size[0] == 120 and output_size[1] == 120:
+            tmp_pts = np.array([[42.29459953,
+                                 77.53179932,
+                                 60.02519989,
+                                 45.54930115,
+                                 74.72990036,
+                                 63.69630051,
+                                 63.50139999,
+                                 83.73660278,
+                                 104.3655014,
+                                 104.20410156]])
+            empty_face = np.zeros((output_size[1], output_size[0], 3))
+            cv2.imwrite('empty_face_' + str(output_size[0])
+                        + '_' + str(output_size[1]) + '.jpg', empty_face)
+            draw_lms('empty_face_' + str(output_size[0])
+                     + '_' + str(output_size[1]) + '.jpg', tmp_pts)
 
-    # # show ref_5pts
-    if output_size[0] == 112 and output_size[1] == 112:
-        tmp_pts = np.array([[38.29459953,
-                             73.53179932,
-                             56.02519989,
-                             41.54930115,
-                             70.72990036,
-                             51.69630051,
-                             51.50139999,
-                             71.73660278,
-                             92.3655014,
-                             92.20410156]])
-        empty_face = np.zeros((112, 112, 3))
-        cv2.imwrite('empty_face.jpg', empty_face)
-        draw_lms('empty_face.jpg', tmp_pts)
-    elif output_size[0] == 96 and output_size[1] == 112:
-        tmp_pts = np.array([[30.29459953,
-                             65.53179932,
-                             48.02519989,
-                             33.54930115,
-                             62.72990036,
-                             51.69630051,
-                             51.50139999,
-                             71.73660278,
-                             92.3655014,
-                             92.20410156]])
-        empty_face = np.zeros((96, 112, 3))
-        cv2.imwrite('empty_face_'+str(output_size[0])
-                    + '_' + str(output_size[1])+'.jpg', empty_face)
-        draw_lms('empty_face_'+str(output_size[0])
-                 + '_' + str(output_size[1])+'.jpg', tmp_pts)
-    elif output_size[0] == 120 and output_size[1] == 120:
-        tmp_pts = np.array([[42.29459953,
-                             77.53179932,
-                             60.02519989,
-                             45.54930115,
-                             74.72990036,
-                             63.69630051,
-                             63.50139999,
-                             83.73660278,
-                             104.3655014,
-                             104.20410156]])
-        empty_face = np.zeros((120, 120, 3))
-        cv2.imwrite('empty_face_' + str(output_size[0])
-                    + '_' + str(output_size[1]) + '.jpg', empty_face)
-        draw_lms('empty_face_' + str(output_size[0])
-                 + '_' + str(output_size[1]) + '.jpg', tmp_pts)
+        default_square = True
+        inner_padding_factor = 0.25
+        outer_padding = (0, 0)
+        # get the reference 5 landmarks position in the crop settings
+        reference_5pts = get_reference_facial_points(
+            output_size, inner_padding_factor, outer_padding, default_square)
 
-    default_square = True
-    inner_padding_factor = 0.25
-    outer_padding = (0, 0)
-    # get the reference 5 landmarks position in the crop settings
-    reference_5pts = get_reference_facial_points(
-        output_size, inner_padding_factor, outer_padding, default_square)
-
-    if (len(bbox) > 0):
-        if type == 'labeled':
-            # find the max bbox
-            max_bb = []
-            for box in bbox:
-                x, y, r, b, _ = list(map(int, box))
-                w = r - x + 1
-                h = b - y + 1
-                max_bb.append(w * h)
-            index = max_bb.index(max(max_bb))
-            facial5points = facial5points[[index]]
-            facial5point = np.reshape(facial5points, (2, 5))
-            dst_img = warp_and_crop_face(img, facial5point, reference_pts=reference_5pts, crop_size=output_size)
-            dst_name = filename[: filename.rfind('.')]
-            cv2.imwrite('{}_{}_mtcnn_aligned_{}x{}.jpg'.format(dst_name, type, output_size[0], output_size[1]), dst_img)
-        elif type == 'unlabelled':
-            for i in range(bbox.shape[0]):
-                facial5point = np.reshape(facial5points[i], (2, 5))
+        if (len(bbox) > 0):
+            if type == 'labeled':
+                # find the max bbox
+                max_bb = []
+                for box in bbox:
+                    x, y, r, b, _ = list(map(int, box))
+                    w = r - x + 1
+                    h = b - y + 1
+                    max_bb.append(w * h)
+                # 得到最大值的序号
+                index = max_bb.index(max(max_bb))
+                facial5points = facial5points[[index]]
+                facial5point = np.reshape(facial5points, (2, 5))
                 dst_img = warp_and_crop_face(img, facial5point, reference_pts=reference_5pts, crop_size=output_size)
-                dst_name = filename[: filename.rfind('.')]
-                cv2.imwrite('{}_{}_mtcnn_aligned_{}x{}_{}.jpg'.format(dst_name, type, output_size[0], output_size[1], i), dst_img)
+                # dst_name = filename[: filename.rfind('.')]
+                dst = filename.split("\\")
+                dst_dir = savafilename + '/train/' + dst[1] + '/' + dst[2] + '/'
+                if not os.path.exists(dst_dir):
+                    os.makedirs(dst_dir)
+                dst_dir = dst_dir + dst[3][:dst[3].rfind('.')]
+                cv2.imwrite('{}_{}_mtcnn_aligned_{}x{}.jpg'.format(dst_dir, type, output_size[0], output_size[1]),
+                            dst_img)
+            elif type == 'unlabelled':
+                for i in range(bbox.shape[0]):
+                    facial5point = np.reshape(facial5points[i], (2, 5))
+                    dst_img = warp_and_crop_face(img, facial5point, reference_pts=reference_5pts, crop_size=output_size)
+                    dst = filename.split("\\")
+                    dst_dir = savafilename + '/train/' + dst[1] + '/' + dst[2] + '/'
+                    if not os.path.exists(dst_dir):
+                        os.makedirs(dst_dir)
+                    dst_dir = dst_dir + dst[3][:dst[3].rfind('.')]
+                    cv2.imwrite(
+                        '{}_{}_mtcnn_aligned_{}x{}_{}.jpg'.format(dst_dir, type, output_size[0], output_size[1], i),
+                        dst_img)
 
+    else:
+        file_write_obj = open("bbox-none-name.txt", 'w')
+        file_write_obj.writelines(filename)  # write 写入
+        file_write_obj.write('\n')
+        file_write_obj.close()
+
+
+import os
 
 if __name__ == "__main__":
     detector = MtcnnDetector()
-    filename = './input.jpg'
-    type = 'unlabelled' # labeled or unlabelled
-    process(filename, type, output_size=(112, 112))
+    type = 'labeled'  # labeled or unlabelled
+    savafile = './data'
+    for root, dirs, files in os.walk(r"./data/src-data"):
+
+        # root 表示当前正在访问的文件夹路径
+        # dirs 表示该文件夹下的子目录名list
+        # files 表示该文件夹下的文件list
+
+        # 遍历文件
+        flag = False
+        for f in files:
+            filename = os.path.join(root, f)
+
+            fl = filename.split('\\')
+            if fl[2] == '0000119' and fl[3][:fl[3].rfind('.')] == '030':
+                flag = True
+            print(filename)
+            if flag:
+                process(filename, type, savafile, output_size=(112, 112))
+            # process(filename, type, savafile, output_size=(112, 112))
+
+
+
+
